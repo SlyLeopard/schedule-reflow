@@ -1,4 +1,4 @@
-export interface workOrder {
+export interface WorkOrder {
     docId: string;                  // Unique identifier
     docType: string;                // Document type
     data: {
@@ -19,7 +19,7 @@ export interface workOrder {
     }
 }
 
-export interface workCenter {
+export interface WorkCenter {
     docId: string;                  // Unique identifier
     docType: string;                // Document type
     data: {
@@ -41,13 +41,27 @@ export interface workCenter {
     }
 }
 
-export interface manufacturingOrder {
-    docId: string;                  // Unique identifier
-    docType: "manufacturingOrder";  // Document type
+export interface ManufacturingOrder {
+    docId: string;                      // Unique identifier
+    docType: "manufacturingOrder";      // Document type
     data: {
         manufacturingOrderNumber: string;
         itemId: string;
         quantity: number;
         dueDate: string;
     }
+}
+
+export interface Result {
+    resultingWorkOrders: WorkOrder[];   // WorkOrder list with no conflicts
+    changes: Change[];                  // List of changes made
+}
+
+export interface Change {
+    workOrderId: string;                // WorkOrder changed
+    oldStartTime: string;               // Previous start time
+    newStartTime: string;               // New conflict-free start time
+    oldEndTime: string;                 // Previous end time
+    newEndTime: string;                 // New conflict-free end time
+    delayReason: string;                // Human readable explanation for the new time
 }
