@@ -1,0 +1,12 @@
+{
+  "name": "schedule-reflow",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Naologic take home assessment to create a schedule reflow algorithm",
+  "dependencies": {
+    "luxon": "3.7.2"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.7.1"
+  }
+}
