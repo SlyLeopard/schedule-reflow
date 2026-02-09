@@ -7,8 +7,8 @@ import {
 import {
     DateTime
 } from "luxon";
-import { 
-    DateUtils 
+import {
+    DateUtils
 } from "../utils/date.utils";
 
 export class ReflowService {
@@ -66,6 +66,14 @@ export class ReflowService {
                 numberOfDependencies.set(wo.docId, (numberOfDependencies.get(wo.docId) ?? 0) + 1)
             }
         }
+    }
+
+    scheduleWorkOrder(
+        workOrder: WorkOrder,
+        workCenters: WorkCenter[],
+        timePointers: Map<string, DateTime>
+    ): [WorkOrder, Change] {
+
     }
 
 }
