@@ -47,6 +47,25 @@ export class ReflowService {
         }
     }
 
+    sortWorkOrders(
+        workOrders: WorkOrder[]
+    ): WorkOrder[] {
+        let childWorkOrders = new Map<string, string[]>();
+        let numberOfDependencies = new Map<string, number>();
 
+        // Initialize empty children arrays and dependency depths
+        for (const wo of workOrders) {
+            childWorkOrders.set(wo.docId, [])
+            numberOfDependencies.set(wo.docId, 0)
+        }
+
+        // For each work order, iterate through the parents it depends on 
+        for (const wo of workOrders) {
+            for (const parentId of wo.data.dependsOnWorkOrderIds) {
+                childWorkOrders.get(parentId)?.push(wo.docId)
+                numberOfDependencies.set(wo.docId, (numberOfDependencies.get(wo.docId) ?? 0) + 1)
+            }
+        }
+    }
 
 }
