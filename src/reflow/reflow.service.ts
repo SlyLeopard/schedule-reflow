@@ -21,10 +21,17 @@ export class ReflowService {
         workCenters: WorkCenter[]
     ): Result {
         let scheduledWorkOrders = [] // Initialize the adjusted work orders result array
+        let scheduledWorkOrderMap = new Map<string, WorkOrder>()
         let changes = []             // Initialize the adjustment notes array
 
         // Topographically sort all work orders to account for dependencies
         let sortedWorkOrders = this.sortWorkOrders(workOrders)
+
+        // Create a quick lookup for work centers by Id
+        let wcIdLookup = new Map<string, WorkCenter>();
+        for (const wc of workCenters) {
+            wcIdLookup.set(wc.docId, wc);
+        }
 
         // Initialize all work centers time pointer to the first work order's start time
         let timePointers = DateUtils.initializeTimePointers(workCenters, sortedWorkOrders[0].data.startDate)
@@ -33,10 +40,16 @@ export class ReflowService {
         for (const wo of sortedWorkOrders) {
 
             // Schedule the next order in line, passing all work centers and the current time pointer array
-            let [scheduledWorkOrder, change] = this.scheduleWorkOrder(wo, workCenters, timePointers)
+            let [scheduledWorkOrder, change] = this.scheduleWorkOrder(
+                wo, 
+                wcIdLookup.get(wo.data.workCenterId)!, 
+                timePointers,
+                scheduledWorkOrderMap
+            )
 
             // Save the resulting work order
             scheduledWorkOrders.push(scheduledWorkOrder)
+            scheduledWorkOrderMap.set(scheduledWorkOrder.docId, scheduledWorkOrder)
 
             // We only document changes if a work order had its time changed by delays or maintenance
             if (change) {
@@ -119,10 +132,36 @@ export class ReflowService {
 
     scheduleWorkOrder(
         workOrder: WorkOrder,
-        workCenters: WorkCenter[],
-        timePointers: Map<string, DateTime>
-    ): [WorkOrder, Change] {
+        workCenter: WorkCenter,
+        timePointers: Map<string, DateTime>,
+        scheduledWorkOrdersMap: Map<string, WorkOrder>
+    ): [WorkOrder, Change | null] {
 
+        // Initalize the work order's original timing to help with determining if a change has occurred
+        const timePointer = timePointers.get(workCenter.docId)!
+        const initialStartTime = DateUtils.stringToDateTime(workOrder.data.startDate)
+        const initialEndTime = DateUtils.stringToDateTime(workOrder.data.endDate)
+        const duration = workOrder.data.durationMinutes
+        const dependencyMetTime = this.getDependenciesMetTime(workOrder, scheduledWorkOrdersMap)
+        const startTimeMillis = Math.max(timePointer.toMillis(), initialStartTime.toMillis(), dependencyMetTime.toMillis())
+        const endTime = DateTime.fromMillis(startTimeMillis).plus({ minutes: duration })
+        let change: Change | null = null
+
+        if (startTimeMillis !== initialStartTime.toMillis() || endTime.toMillis() !== initialEndTime.toMillis()) {
+            workOrder.data.startDate = DateTime.fromMillis(startTimeMillis).toISO()!
+            workOrder.data.endDate = endTime.toISO()!
+            change = {
+                workOrderId: workOrder.docId,
+                oldStartTime: initialStartTime.toISO()!,
+                newStartTime: DateTime.fromMillis(startTimeMillis).toISO()!,
+                oldEndTime: initialEndTime.toISO()!,
+                newEndTime: endTime.toISO()!,
+                delayReason: "Delayed due to dependencies"
+            }
+        }
+        scheduledWorkOrdersMap.set(workOrder.docId, workOrder)
+        timePointers.set(workCenter.docId, endTime)
+        return [workOrder, change]
     }
 
     // Helper function to have lower startTime work orders get processed first with Id as a tiebreaker
@@ -135,6 +174,15 @@ export class ReflowService {
         } else {
             return a.docId.localeCompare(b.docId);
         }
+    }
+
+    getDependenciesMetTime(workOrder: WorkOrder, scheduledWorkOrdersMap: Map<string, WorkOrder>): DateTime {
+        let dependenciesMetTime = DateTime.fromMillis(0)
+        for(const parentId of workOrder.data.dependsOnWorkOrderIds) {
+            const parentEndDate = DateUtils.stringToDateTime(scheduledWorkOrdersMap.get(parentId)!.data.endDate)
+            dependenciesMetTime = parentEndDate > dependenciesMetTime ? parentEndDate : dependenciesMetTime
+        }
+        return dependenciesMetTime
     }
 
 }
