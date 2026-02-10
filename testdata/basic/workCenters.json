@@ -1,0 +1,92 @@
+{
+    "workCenters": [
+        {
+            "docId": "WC-1",
+            "docType": "workCenter",
+            "data": {
+                "name": "Assembly Line 1",
+                "shifts": [
+                    {
+                        "dayOfWeek": 0,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 1,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 2,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 3,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 4,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 5,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 6,
+                        "startHour": 0,
+                        "endHour": 0
+                    }
+                ]
+            }
+        },
+        {
+            "docId": "WC-2",
+            "docType": "workCenter",
+            "data": {
+                "name": "Assembly Line 2",
+                "shifts": [
+                    {
+                        "dayOfWeek": 0,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 1,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 2,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 3,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 4,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 5,
+                        "startHour": 0,
+                        "endHour": 0
+                    },
+                    {
+                        "dayOfWeek": 6,
+                        "startHour": 0,
+                        "endHour": 0
+                    }
+                ]
+            }
+        }
+    ]
+}
