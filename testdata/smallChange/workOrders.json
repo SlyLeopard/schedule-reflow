@@ -1,0 +1,96 @@
+{
+    "workOrders": [
+        {
+            "docId": "A1",
+            "docType": "workOrder",
+            "data": {
+                "workOrderNumber": "WO-1",
+                "workCenterId": "WC-1",
+                "manufacturingOrderId": "MO-1",
+                "startDate": "2026-02-01T10:00:00Z",
+                "endDate": "2026-02-01T11:00:00Z",
+                "durationMinutes": 60,
+                "isMaintenance": false,
+                "dependsOnWorkOrderIds": []
+            }
+        },
+        {
+            "docId": "B1",
+            "docType": "workOrder",
+            "data": {
+                "workOrderNumber": "WO-2",
+                "workCenterId": "WC-1",
+                "manufacturingOrderId": "MO-1",
+                "startDate": "2026-02-01T10:00:00Z",
+                "endDate": "2026-02-01T11:00:00Z",
+                "durationMinutes": 60,
+                "isMaintenance": false,
+                "dependsOnWorkOrderIds": [
+                    "A1"
+                ]
+            }
+        },
+        {
+            "docId": "C1",
+            "docType": "workOrder",
+            "data": {
+                "workOrderNumber": "WO-3",
+                "workCenterId": "WC-1",
+                "manufacturingOrderId": "MO-1",
+                "startDate": "2026-02-01T10:00:00Z",
+                "endDate": "2026-02-01T11:00:00Z",
+                "durationMinutes": 60,
+                "isMaintenance": false,
+                "dependsOnWorkOrderIds": [
+                    "B1"
+                ]
+            }
+        },
+        {
+            "docId": "A2",
+            "docType": "workOrder",
+            "data": {
+                "workOrderNumber": "WO-4",
+                "workCenterId": "WC-2",
+                "manufacturingOrderId": "MO-2",
+                "startDate": "2026-02-01T10:00:00Z",
+                "endDate": "2026-02-01T11:00:00Z",
+                "durationMinutes": 60,
+                "isMaintenance": false,
+                "dependsOnWorkOrderIds": []
+            }
+        },
+        {
+            "docId": "B2",
+            "docType": "workOrder",
+            "data": {
+                "workOrderNumber": "WO-5",
+                "workCenterId": "WC-2",
+                "manufacturingOrderId": "MO-2",
+                "startDate": "2026-02-01T11:00:00Z",
+                "endDate": "2026-02-01T12:00:00Z",
+                "durationMinutes": 60,
+                "isMaintenance": false,
+                "dependsOnWorkOrderIds": [
+                    "A2"
+                ]
+            }
+        },
+        {
+            "docId": "C2",
+            "docType": "workOrder",
+            "data": {
+                "workOrderNumber": "WO-6",
+                "workCenterId": "WC-2",
+                "manufacturingOrderId": "MO-2",
+                "startDate": "2026-02-01T12:00:00Z",
+                "endDate": "2026-02-01T13:00:00Z",
+                "durationMinutes": 60,
+                "isMaintenance": false,
+                "dependsOnWorkOrderIds": [
+                    "B2"
+                ]
+            }
+        }
+    ]
+}
