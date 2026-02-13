@@ -39,6 +39,8 @@ export class ReflowService {
         // Begin iterating through all work orders and make schedule changes as needed
         for (const wo of sortedWorkOrders) {
 
+            //@upgrade('0.0.2') - Add logic to check for invalid work center
+
             // Schedule the next order in line, passing all work centers and the current time pointer array
             let [scheduledWorkOrder, change] = this.scheduleWorkOrder(
                 wo, 
@@ -119,6 +121,7 @@ export class ReflowService {
                 inDegree.set(childId, inDegree.get(childId)! - 1);
 
                 // Add children to the queue once we resolve dependencies (inDegree = 0)
+                // @upgrade('0.0.2') - Add logic to check for invalid parent in test data
                 if (inDegree.get(childId) == 0) queue.push(idLookup.get(childId)!);
             }
         }
@@ -139,26 +142,31 @@ export class ReflowService {
 
         // Initalize the work order's original timing to help with determining if a change has occurred
         const timePointer = timePointers.get(workCenter.docId)!
-        const initialStartTime = DateUtils.stringToDateTime(workOrder.data.startDate)
-        const initialEndTime = DateUtils.stringToDateTime(workOrder.data.endDate)
+        const initialStartTime = DateUtils.stringToDateTime(workOrder.data.startDate) as DateTime
+        const initialEndTime = DateUtils.stringToDateTime(workOrder.data.endDate) as DateTime
         const duration = workOrder.data.durationMinutes
         const dependencyMetTime = this.getDependenciesMetTime(workOrder, scheduledWorkOrdersMap)
         const startTimeMillis = Math.max(timePointer.toMillis(), initialStartTime.toMillis(), dependencyMetTime.toMillis())
+
+        //@upgrade('0.0.2') - Add logic to account for maintenance delays and work shifts when working through work orders
+
+        const newTime = DateTime.fromMillis(startTimeMillis)
         const endTime = DateTime.fromMillis(startTimeMillis).plus({ minutes: duration })
         let change: Change | null = null
 
         if (startTimeMillis !== initialStartTime.toMillis() || endTime.toMillis() !== initialEndTime.toMillis()) {
-            workOrder.data.startDate = DateTime.fromMillis(startTimeMillis).toISO()!
-            workOrder.data.endDate = endTime.toISO()!
+            workOrder.data.startDate = DateUtils.stringUTCtoISO(newTime.toISO()!)
+            workOrder.data.endDate = DateUtils.stringUTCtoISO(endTime.toISO()!)
             change = {
                 workOrderId: workOrder.docId,
                 oldStartTime: initialStartTime.toISO()!,
-                newStartTime: DateTime.fromMillis(startTimeMillis).toISO()!,
+                newStartTime: DateUtils.stringUTCtoISO(newTime.toISO()!),
                 oldEndTime: initialEndTime.toISO()!,
-                newEndTime: endTime.toISO()!,
-                delayReason: "Delayed due to dependencies"
+                newEndTime: DateUtils.stringUTCtoISO(endTime.toISO()!),
+                delayReason: "Delayed due to dependencies" //@upgrade('0.0.2') - Add logic to determine exact reason when accounting for maintenance
             }
         }
+
         scheduledWorkOrdersMap.set(workOrder.docId, workOrder)
         timePointers.set(workCenter.docId, endTime)
         return [workOrder, change]
@@ -176,6 +184,7 @@ export class ReflowService {
         }
     }
 
+    // Helper function to confirm whether all dependencies for a given work order have been met and return the minimum time
     getDependenciesMetTime(workOrder: WorkOrder, scheduledWorkOrdersMap: Map<string, WorkOrder>): DateTime {
         let dependenciesMetTime = DateTime.fromMillis(0)
         for(const parentId of workOrder.data.dependsOnWorkOrderIds) {
