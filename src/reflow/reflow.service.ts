@@ -43,8 +43,8 @@ export class ReflowService {
 
             // Schedule the next order in line, passing all work centers and the current time pointer array
             let [scheduledWorkOrder, change] = this.scheduleWorkOrder(
-                wo, 
-                wcIdLookup.get(wo.data.workCenterId)!, 
+                wo,
+                wcIdLookup.get(wo.data.workCenterId)!,
                 timePointers,
                 scheduledWorkOrderMap
             )
@@ -110,14 +110,14 @@ export class ReflowService {
         let topologicallySortedWorkOrders: WorkOrder[] = []
 
         // Create a revolving queue that adds work orders as dependencies are resolved
-        while(queue.length > 0) {
+        while (queue.length > 0) {
 
             // Pop the next work order with resolved dependencies and add it to the sorted list
             const currentWorkOrder = queue.shift()!;
             topologicallySortedWorkOrders.push(currentWorkOrder);
 
             // Iterate through current worker's children and reduce inDegree by 1
-            for(const childId of childWorkOrders.get(currentWorkOrder.docId)!){
+            for (const childId of childWorkOrders.get(currentWorkOrder.docId)!) {
                 inDegree.set(childId, inDegree.get(childId)! - 1);
 
                 // Add children to the queue once we resolve dependencies (inDegree = 0)
@@ -127,7 +127,7 @@ export class ReflowService {
         }
 
         // Quick check for cyclic dependencies by ensuring the number of work orders hasn't changed
-        if(ConstraintChecker.checkForCyclicDependencies(workOrders, topologicallySortedWorkOrders)) {
+        if (ConstraintChecker.checkForCyclicDependencies(workOrders, topologicallySortedWorkOrders)) {
             throw new Error("Cyclic dependency detected. Cannot proceed with scheduling")
         }
         return topologicallySortedWorkOrders;
@@ -148,22 +148,32 @@ export class ReflowService {
         const dependencyMetTime = this.getDependenciesMetTime(workOrder, scheduledWorkOrdersMap)
         const startTimeMillis = Math.max(timePointer.toMillis(), initialStartTime.toMillis(), dependencyMetTime.toMillis())
 
-        //@upgrade('0.0.2') - Add logic to account for maintenance delays and work shifts when working through work orders
-
         const newTime = DateTime.fromMillis(startTimeMillis)
-        const endTime = DateTime.fromMillis(startTimeMillis).plus({ minutes: duration })
+        let endTime = DateTime.fromMillis(startTimeMillis).plus({ minutes: duration })
+
+        // First we check for any maintenance windows that would conflict with the new proposed time and adjust accordingly
+        const allocation = workCenter.calendar.allocateAroundMaintenance(newTime, duration)
+
+        // After accounting for maintenance, we then need to check if the new proposed time falls within working hours and adjust to the next available working time if not
+        const startTime = workCenter.calendar.normalizeToWorkingTime(allocation.start)
+
+        // Finally, we need to ensure that the logical end time also falls within working hours
+        endTime = workCenter.calendar.normalizeToWorkingTime(allocation.logicalEnd)
+
         let change: Change | null = null
 
-        if (startTimeMillis !== initialStartTime.toMillis() || endTime.toMillis() !== initialEndTime.toMillis()) {
+        if (startTime.toMillis() !== initialStartTime.toMillis() || endTime.toMillis() !== initialEndTime.toMillis()) {
             workOrder.data.startDate = DateUtils.stringUTCtoISO(newTime.toISO()!)
             workOrder.data.endDate = DateUtils.stringUTCtoISO(endTime.toISO()!)
             change = {
                 workOrderId: workOrder.docId,
                 oldStartTime: initialStartTime.toISO()!,
-                newStartTime: DateUtils.stringUTCtoISO(newTime.toISO()!),
+                newStartTime: DateUtils.stringUTCtoISO(startTime.toISO()!),
                 oldEndTime: initialEndTime.toISO()!,
                 newEndTime: DateUtils.stringUTCtoISO(endTime.toISO()!),
-                delayReason: "Delayed due to dependencies" //@upgrade('0.0.2') - Add logic to determine exact reason when accounting for maintenance
+
+                // @upgrade('0.0.2') - Add logic to determine more specific delay reasons such as maintenance, shift changes, or dependency delays
+                delayReason: "Delayed due to dependencies, work center availability, or maintenance"
             }
         }
 
@@ -177,7 +187,7 @@ export class ReflowService {
         const aDateTime = DateUtils.stringToDateTime(a.data.startDate)
         const bDateTime = DateUtils.stringToDateTime(b.data.startDate)
         const diff = aDateTime.toMillis() - bDateTime.toMillis()
-        if(diff !== 0) {
+        if (diff !== 0) {
             return diff
         } else {
             return a.docId.localeCompare(b.docId);
@@ -187,7 +197,7 @@ export class ReflowService {
     // Helper function to confirm whether all dependencies for a given work order have been met and return the minimum time
     getDependenciesMetTime(workOrder: WorkOrder, scheduledWorkOrdersMap: Map<string, WorkOrder>): DateTime {
         let dependenciesMetTime = DateTime.fromMillis(0)
-        for(const parentId of workOrder.data.dependsOnWorkOrderIds) {
+        for (const parentId of workOrder.data.dependsOnWorkOrderIds) {
             const parentEndDate = DateUtils.stringToDateTime(scheduledWorkOrdersMap.get(parentId)!.data.endDate)
             dependenciesMetTime = parentEndDate > dependenciesMetTime ? parentEndDate : dependenciesMetTime
         }

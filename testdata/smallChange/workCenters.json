@@ -7,39 +7,35 @@
                 "name": "Assembly Line 1",
                 "shifts": [
                     {
-                        "dayOfWeek": 0,
-                        "startHour": 0,
-                        "endHour": 0
-                    },
-                    {
                         "dayOfWeek": 1,
-                        "startHour": 0,
-                        "endHour": 0
+                        "startHour": 8,
+                        "endHour": 17
                     },
                     {
                         "dayOfWeek": 2,
-                        "startHour": 0,
-                        "endHour": 0
+                        "startHour": 8,
+                        "endHour": 17
                     },
                     {
                         "dayOfWeek": 3,
-                        "startHour": 0,
-                        "endHour": 0
+                        "startHour": 8,
+                        "endHour": 17
                     },
                     {
                         "dayOfWeek": 4,
-                        "startHour": 0,
-                        "endHour": 0
+                        "startHour": 8,
+                        "endHour": 17
                     },
                     {
                         "dayOfWeek": 5,
-                        "startHour": 0,
-                        "endHour": 0
-                    },
+                        "startHour": 8,
+                        "endHour": 17
+                    }
+                ],
+                "maintenanceWindows": [
                     {
-                        "dayOfWeek": 6,
-                        "startHour": 0,
-                        "endHour": 0
+                        "start": "2026-02-01T12:00:00Z",
+                        "end": "2026-02-01T13:00:00Z"
                     }
                 ]
             }
@@ -51,39 +47,35 @@
                 "name": "Assembly Line 2",
                 "shifts": [
                     {
-                        "dayOfWeek": 0,
-                        "startHour": 0,
-                        "endHour": 0
-                    },
-                    {
                         "dayOfWeek": 1,
-                        "startHour": 0,
-                        "endHour": 0
+                        "startHour": 8,
+                        "endHour": 17
                     },
                     {
                         "dayOfWeek": 2,
-                        "startHour": 0,
-                        "endHour": 0
+                        "startHour": 8,
+                        "endHour": 17
                     },
                     {
                         "dayOfWeek": 3,
-                        "startHour": 0,
-                        "endHour": 0
+                        "startHour": 8,
+                        "endHour": 17
                     },
                     {
                         "dayOfWeek": 4,
-                        "startHour": 0,
-                        "endHour": 0
+                        "startHour": 8,
+                        "endHour": 17
                     },
                     {
                         "dayOfWeek": 5,
-                        "startHour": 0,
-                        "endHour": 0
-                    },
+                        "startHour": 8,
+                        "endHour": 17
+                    }
+                ],
+                "maintenanceWindows": [
                     {
-                        "dayOfWeek": 6,
-                        "startHour": 0,
-                        "endHour": 0
+                        "start": "2026-02-01T12:00:00Z",
+                        "end": "2026-02-01T13:00:00Z"
                     }
                 ]
             }
