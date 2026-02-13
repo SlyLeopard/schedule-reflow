@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es2020",                // modern JS features
+    "module": "commonjs",              // Node-friendly
+    "rootDir": "./src",                // your TS source folder
+    "outDir": "./dist",                // compiled JS goes here
+    "strict": true,                    // enable strict type checking
+    "esModuleInterop": true,           // handle default imports from CommonJS
+    "resolveJsonModule": true,         // import JSON files
+    "skipLibCheck": true,              // skip checking external types
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],                  // include Node globals (console, process, etc.)
+    "lib": ["es2020"]                  // include ES2020 built-in types (Map, Set, Promise)
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
