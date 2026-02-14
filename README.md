@@ -28,5 +28,6 @@
 - Run ```npm install``` to grab packages
 - To run the basic test script, run ```npm run test```
 - The base script is located in ```src/scripts/index.ts``` so if you'd like to use custom data or run your own tests, just modify that script.
+- Test data is stored in the ```testdata``` folder so unique input cases can be added by adding your custom folder and files.
 
 
