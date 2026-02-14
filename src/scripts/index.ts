@@ -2,8 +2,8 @@ import { ReflowService } from "../reflow/reflow.service";
 import { WorkOrder } from "../reflow/types";
 import { buildWorkCenter } from "../utils/work-center/work-center.factory";
 
-import workCentersJson from "../../testdata/smallChange/workCenters.json";
-import workOrdersJson from "../../testdata/smallChange/workOrders.json";
+import workCentersJson from "../../testdata/extensive/workCenters.json";
+import workOrdersJson from "../../testdata/extensive/workOrders.json";
 import { WorkCenterDTO } from "../utils/work-center/work-center.dto";
 
 type WorkCentersFile = {
