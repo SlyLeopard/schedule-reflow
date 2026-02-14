@@ -147,18 +147,22 @@ export class ReflowService {
         const duration = workOrder.data.durationMinutes
         const dependencyMetTime = this.getDependenciesMetTime(workOrder, scheduledWorkOrdersMap)
         const startTimeMillis = Math.max(timePointer.toMillis(), initialStartTime.toMillis(), dependencyMetTime.toMillis())
+        const newTime = DateTime.fromMillis(startTimeMillis).toUTC()
+        let endTime = DateTime.fromMillis(startTimeMillis).toUTC().plus({ minutes: duration })
+        // @upgrade('0.0.2') - Clean up all this time manipulation logic because this is gross and missing edge cases
 
-        const newTime = DateTime.fromMillis(startTimeMillis)
-        let endTime = DateTime.fromMillis(startTimeMillis).plus({ minutes: duration })
+        // console.log(`Scheduling work order ${workOrder.docId} with initial time from ${initialStartTime.toISO()} to ${initialEndTime.toISO()}. Proposed new time is from ${newTime.toISO()} to ${endTime.toISO()}`)
 
         // First we check for any maintenance windows that would conflict with the new proposed time and adjust accordingly
         const allocation = workCenter.calendar.allocateAroundMaintenance(newTime, duration)
+
+        // console.log(`Proposed allocation for work order ${workOrder.docId} is from ${allocation.start.toISO()} to ${allocation.logicalEnd.toISO()}`)
 
         // After accounting for maintenance, we then need to check if the new proposed time falls within working hours and adjust to the next available working time if not
         const startTime = workCenter.calendar.normalizeToWorkingTime(allocation.start)
 
         // Finally, we need to ensure that the logical end time also falls within working hours
-        endTime = workCenter.calendar.normalizeToWorkingTime(allocation.logicalEnd)
+        endTime = workCenter.calendar.allocateWorkingMinutes(startTime, duration)
 
         let change: Change | null = null
 

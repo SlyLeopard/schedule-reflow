@@ -21,7 +21,7 @@ export interface WorkOrder {
     }
 }
 
-export interface WorkCenter {
+export class WorkCenter {
     docId: string;                  // Unique identifier
     docType: string;                // Document type
     calendar: WorkCenterCalendar    // Calendar with shifts and maintenance windows
@@ -41,6 +41,21 @@ export interface WorkCenter {
             endDate: string;
             reason?: string; // Optional description
         }>;
+    }
+
+    constructor(
+        docId: string,
+        name: string,
+        calendar: WorkCenterCalendar,
+    ) {
+        this.docId = docId;
+        this.docType = "workCenter";
+        this.calendar = calendar;
+        this.data = {
+            name,
+            shifts: [],
+            maintenanceWindows: []
+        }
     }
 }
 
@@ -87,6 +102,12 @@ export interface WorkCenterCalendar {
         start: DateTime
         logicalEnd: DateTime
     }
+
+    allocateWorkingMinutes(
+        start: DateTime,
+        durationMinutes: number
+    ): DateTime
+
 }
 
 // Simple implementation of WorkCenterCalendar that accounts for maintenance windows and shifts
@@ -114,39 +135,42 @@ export class SimpleWorkCenterCalendar implements WorkCenterCalendar {
     ): { start: DateTime; logicalEnd: DateTime } {
 
         let remaining = durationMinutes
-        let cursor = earliest
+        let cursor = earliest.toUTC()
 
         // We loop through maintenance windows until we've found enough time to fit the entire duration, moving the cursor forward as needed
         while (true) {
             const maintenance = this.getNextMaintenanceAfter(cursor)
-
+            // console.log(`Next maintenance after ${cursor.toISO()} is ${maintenance ? maintenance.start.toISO() : "none"}`)
             if (!maintenance) {
                 return {
-                    start: earliest,
-                    logicalEnd: cursor.plus({ minutes: remaining })
+                    start: cursor,
+                    logicalEnd: cursor.plus({ minutes: remaining }).toUTC()
                 }
             }
 
             // If the next maintenance window starts after the remaining duration can be completed, we can schedule the work order before that maintenance window
-            const minutesUntilMaintenance =
-                maintenance.start.diff(cursor, "minutes").minutes
+            const minutesUntilMaintenance = maintenance.start.diff(cursor, "minutes").minutes
+
+            // console.log(`Minutes until maintenance: ${minutesUntilMaintenance}, remaining duration: ${remaining}`)
 
             if (minutesUntilMaintenance >= remaining) {
                 return {
-                    start: earliest,
-                    logicalEnd: cursor.plus({ minutes: remaining })
+                    start: cursor,
+                    logicalEnd: cursor.plus({ minutes: remaining }).toUTC()
                 }
+            } else {
+                // Otherwise, we move the cursor to the end of the maintenance window and loop to check for the next maintenance window
+                cursor = maintenance.end.plus({ milliseconds: 1 }).toUTC() // Add 1 ms to ensure we move past the maintenance window
             }
-
-            remaining -= minutesUntilMaintenance
-            cursor = maintenance.end
         }
     }
 
     // Returns the next maintenance window that starts after the given time, or null if there are no more maintenance windows
     getNextMaintenanceAfter(time: DateTime): MaintenanceWindow | null {
         for (const window of this.maintenanceWindows) {
-            if (window.end <= time) continue
+            window.end = window.end.toUTC()
+            window.start = window.start.toUTC()
+            if (window.end <= time.toUTC()) continue
             return window
         }
         return null
@@ -162,10 +186,12 @@ export class SimpleWorkCenterCalendar implements WorkCenterCalendar {
             if (shift.dayOfWeek !== day) continue
 
             const shiftStart = time
-                .set({ hour: shift.startHour, minute: 0, second: 0, millisecond: 0 })
+                .set({ hour: shift.startHour, minute: 0, second: 0, millisecond: 0 }).toUTC()
 
             const shiftEnd = time
-                .set({ hour: shift.endHour, minute: 0, second: 0, millisecond: 0 })
+                .set({ hour: shift.endHour, minute: 0, second: 0, millisecond: 0 }).toUTC()
+
+            // console.log(`Checking if ${time.toISO()} is between ${shiftStart.toISO()} and ${shiftEnd.toISO()}`)
 
             if (time >= shiftStart && time < shiftEnd) {
                 return true
@@ -202,7 +228,7 @@ export class SimpleWorkCenterCalendar implements WorkCenterCalendar {
                     minute: 0,
                     second: 0,
                     millisecond: 0
-                })
+                }).toUTC()
 
                 // If the shift starts after the current time, return the start of that shift
                 if (cursor <= shiftStart) {
@@ -219,6 +245,38 @@ export class SimpleWorkCenterCalendar implements WorkCenterCalendar {
         throw new Error("No working time found within next 7 days")
     }
 
+    // Allocates the given duration starting at the earliest possible time while accounting for both maintenance windows and working hours
+    allocateWorkingMinutes(
+        start: DateTime,
+        durationMinutes: number
+    ): DateTime {
+
+        let current = this.normalizeToWorkingTime(start)
+        let remaining = durationMinutes
+
+        // We loop until we've allocated the full duration, moving the current time forward as we account for maintenance and non-working hours
+        while (remaining > 0) {
+
+            // Take note of the end of the current shift so we don't schedule past it
+            const shiftEnd = this.getShiftEndFor(current)
+            const availableMinutes = shiftEnd.diff(current, "minutes").minutes
+
+            // If there's enough time in the current shift to complete the remaining duration, we can return the end time
+            if (remaining <= availableMinutes) {
+                return current.plus({ minutes: remaining }).toUTC()
+            }
+
+            remaining -= availableMinutes
+
+            // Move current to the next working time after the end of the shift
+            current = this.nextWorkingTimeAfter(
+                shiftEnd.plus({ milliseconds: 1 }).toUTC()
+            )
+        }
+
+        return current
+    }
+
     // If the given time is outside of working hours, returns the next working time. If it is within working hours, returns the same time.
     normalizeToWorkingTime(time: DateTime): DateTime {
         if (this.isWorkingTime(time)) {
@@ -226,6 +284,29 @@ export class SimpleWorkCenterCalendar implements WorkCenterCalendar {
         }
 
         return this.nextWorkingTimeAfter(time)
+    }
+
+    // Helper function to get the end time of the current shift given a time that falls within that shift
+    getShiftEndFor(time: DateTime): DateTime {
+        const day = time.weekday
+
+        // Find the shift that matches the current time
+        const shift = this.shifts.find(
+            s => s.dayOfWeek === day &&
+                time.hour >= s.startHour &&
+                time.hour < s.endHour
+        )
+
+        if (!shift) {
+            throw new Error("Time is not within a shift")
+        }
+
+        return time.set({
+            hour: shift.endHour,
+            minute: 0,
+            second: 0,
+            millisecond: 0
+        }).toUTC()
     }
 
 }
